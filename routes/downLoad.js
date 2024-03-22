@@ -28,6 +28,7 @@ module.exports = function(app) {
     const upload = multer({ storage: storage });  
     var checkedname='';
     var outputDir='';
+    var result='';
     app.post('/downLoad', upload.single('file'), async (req, res) => {
         try {
             if (!req.file) {
@@ -87,18 +88,32 @@ module.exports = function(app) {
     
                 // 打印命令输出到控制台
                 console.log(output);
-    
-                // 如果需要将输出保存到文件，可以使用以下代码
-                //require('fs').writeFileSync('output.txt', output);
+                const lines = output.split('\n'); // 将字符串按行拆分成数组
+
+                const extractedData = lines.map(line => {
+                    const parts = line.split(' consists for '); // 按照 " consists for " 分割每行
+                    const filePath = parts[0]; // 第一个部分是文件路径
+                    const description = parts[1]; // 第二个部分是描述性文本
+                    if (description !== undefined) {
+                        var rptData =filePath+description;
+                        return { rptData };
+                    }
+                }).filter(Boolean); // 过滤掉 undefined 元素
+                
+                console.log(extractedData);
+                
+                result = extractedData;
     
             } catch (error) {
                 // 处理错误情况
-                console.error('Error executing SIM command:', error);
+                console.error('Error executing ', error);
             }
     
             // 发送成功响应
-            res.status(200).json({ message: 'File uploaded, extracted, and processed successfully.', filename: finalFilename });
-    
+            //res.status(200).json({ message: 'output', filename: finalFilename });
+            res.status(200).json({
+                result:result
+            })
         } catch (error) {
             console.error('Error processing request:', error);
             // 发送错误响应
